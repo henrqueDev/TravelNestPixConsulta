@@ -1,4 +1,5 @@
 import json
+import sys
 from flask import jsonify
 from flask_restful import Resource, reqparse
 import requests
@@ -7,18 +8,18 @@ from client_redis import banco
 
 class PaymentLogResource(Resource):
     attrs = reqparse.RequestParser()
-    attrs.add_argument('id_user', type=int, required=True, help="The field 'id' cannot be left blank.")
-    attrs.add_argument('id_cob', type=int, required=True, help="The field 'id_cob' cannot be left blank.")
+    attrs.add_argument('user_id', type=int, required=True, help="The field 'id' cannot be left blank.")
+    attrs.add_argument('cob_id', type=int, required=True, help="The field 'cob_id' cannot be left blank.")
     
 
     def get(self):
         dados = PaymentLogResource.attrs.parse_args()
-        logs = banco.lrange(f"paymentLog:{dados.id_user}", 0, -1)
+        logs = banco.lrange(f"paymentLog:{dados.user_id}", 0, -1)
         log = None
         for log_entry in logs:
             log_json = json.loads(log_entry)
-            id_cobranca =  log_json[0]["cobranca"]["id_cob"]
-            if dados.id_cob == id_cobranca:
+            id_cobranca =  log_json[0]["cobranca"]["cob_id"]
+            if dados.cob_id == id_cobranca:
                 log = log_json[0]
                 break
         return {"logs":log}, 200
@@ -26,23 +27,25 @@ class PaymentLogResource(Resource):
 class PaymentsLogResource(Resource):
     
     atributos = reqparse.RequestParser()
-    atributos.add_argument('id_user', type=int, required=True, help="The field 'id' cannot be left blank.")
-    atributos.add_argument('id_cob', type=str, required=True)
-    atributos.add_argument('qnt_cob', type=str, required=True)
-    atributos.add_argument('id_hotel', type=int, required=True)
-    atributos.add_argument('status', type=str, required=False)
-    atributos.add_argument('check_in', type=str, required=False)
+    atributos.add_argument('user_id', type=int, required=True, help="The field 'id' cannot be left blank.")
+    atributos.add_argument('cob_id', type=str, required=True)
+    atributos.add_argument('total_price', type=str, required=True)
+    atributos.add_argument('hotel_id', type=int, required=True)
+    atributos.add_argument('status', type=str, required=True)
+    atributos.add_argument('check_in', type=str, required=True)
     
-    atributos.add_argument('id_room_option', type=int, required=False)
-    atributos.add_argument('check_out', type=str, required=False)
-    atributos.add_argument('pix_key', type=str, required=False)
+    atributos.add_argument('room_option_id', type=int, required=True)
+    atributos.add_argument('check_out', type=str, required=True)
+    atributos.add_argument('pix_key', type=str, required=True)
+    atributos.add_argument('children_quantity', type=int, required=True)
+    atributos.add_argument('adults_quantity', type=int, required=True)
 
     def get(self):
         
         dados = PaymentsLogResource.atributos.parse_args()
 
                 
-        logs = banco.lrange(f"paymentLog:{dados.id_user}", 0, -1)
+        logs = banco.lrange(f"paymentLog:{dados.user_id}", 0, -1)
         
         paymentlogs = { "logs": [] }
         for log in logs:
@@ -54,7 +57,8 @@ class PaymentsLogResource(Resource):
 
     def post(self):
         dados = PaymentsLogResource.atributos.parse_args()
-        banco.rpush(f"paymentLog:{dados.id_user}", json.dumps([{ "cobranca": {"pix_key": dados.pix_key, "user_id" : dados.id_user, "qnt_cob": dados.qnt_cob, 
-                                                                               "id_cob": dados.id_cob, "hotel_id": dados.id_hotel, "check_in": dados.check_in, "check_out": dados.check_out, "room_option_id": dados.id_room_option, "status": dados.status} }]))
+        banco.rpush(f"paymentLog:{dados.user_id}", json.dumps([{ "cobranca": {"pix_key": dados.pix_key, "user_id" : dados.user_id, "total_price": dados.total_price, 
+                                                                               "cob_id": dados.cob_id, "hotel_id": dados.hotel_id, "check_in": dados.check_in, "check_out": dados.check_out, "room_option_id": dados.room_option_id, "status": dados.status, 
+                                                                               "children_quantity": dados.children_quantity, "adults_quantity": dados.adults_quantity} }]))
         banco.save()
         return "bomDeu", 201
