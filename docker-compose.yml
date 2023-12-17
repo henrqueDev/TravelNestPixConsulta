@@ -12,3 +12,8 @@ services:
       - 5000:5000
     depends_on:
       - redis
+  app2:
+    build: .
+    command: python update_payment_log.py
+    depends_on:
+      - redis

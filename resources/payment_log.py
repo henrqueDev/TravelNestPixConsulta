@@ -1,25 +1,25 @@
 import json
 import sys
-from flask import jsonify
+from flask import jsonify, request
 from flask_restful import Resource, reqparse
 import requests
 from sqlalchemy import Date
 from client_redis import banco
 
 class PaymentLogResource(Resource):
-    attrs = reqparse.RequestParser()
-    attrs.add_argument('user_id', type=int, required=True, help="The field 'id' cannot be left blank.")
-    attrs.add_argument('cob_id', type=int, required=True, help="The field 'cob_id' cannot be left blank.")
+    #attrs = reqparse.RequestParser()
     
-
+    
     def get(self):
-        dados = PaymentLogResource.attrs.parse_args()
-        logs = banco.lrange(f"paymentLog:{dados.user_id}", 0, -1)
+        user_id = request.args.get('user_id')
+        cob_id = request.args.get('cob_id')
+        
+        logs = banco.lrange(f"paymentLog:{user_id}", 0, -1)
         log = None
         for log_entry in logs:
             log_json = json.loads(log_entry)
             id_cobranca =  log_json[0]["cobranca"]["cob_id"]
-            if dados.cob_id == id_cobranca:
+            if cob_id == id_cobranca:
                 log = log_json[0]
                 break
         return {"logs":log}, 200
@@ -28,24 +28,23 @@ class PaymentsLogResource(Resource):
     
     atributos = reqparse.RequestParser()
     atributos.add_argument('user_id', type=int, required=True, help="The field 'id' cannot be left blank.")
-    atributos.add_argument('cob_id', type=str, required=True)
-    atributos.add_argument('total_price', type=str, required=True)
-    atributos.add_argument('hotel_id', type=int, required=True)
-    atributos.add_argument('status', type=str, required=True)
-    atributos.add_argument('check_in', type=str, required=True)
+    atributos.add_argument('cob_id', type=str, required=False)
+    atributos.add_argument('total_price', type=str, required=False)
+    atributos.add_argument('hotel_id', type=int, required=False)
+    atributos.add_argument('status', type=str, required=False)
+    atributos.add_argument('check_in', type=str, required=False)
     
-    atributos.add_argument('room_option_id', type=int, required=True)
-    atributos.add_argument('check_out', type=str, required=True)
-    atributos.add_argument('pix_key', type=str, required=True)
-    atributos.add_argument('children_quantity', type=int, required=True)
-    atributos.add_argument('adults_quantity', type=int, required=True)
+    atributos.add_argument('room_option_id', type=int, required=False)
+    atributos.add_argument('check_out', type=str, required=False)
+    atributos.add_argument('pix_key', type=str, required=False)
+    atributos.add_argument('children_quantity', type=int, required=False)
+    atributos.add_argument('adults_quantity', type=int, required=False)
 
     def get(self):
         
-        dados = PaymentsLogResource.atributos.parse_args()
-
+        user_id = request.args.get('user_id')
                 
-        logs = banco.lrange(f"paymentLog:{dados.user_id}", 0, -1)
+        logs = banco.lrange(f"paymentLog:{user_id}", 0, -1)
         
         paymentlogs = { "logs": [] }
         for log in logs:
