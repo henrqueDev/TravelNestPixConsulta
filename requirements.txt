@@ -12,4 +12,5 @@ flask_restful
 flask_cors
 requests
 redis
+pika
 schedule==1.2.1

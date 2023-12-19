@@ -7,8 +7,6 @@ from sqlalchemy import Date
 from client_redis import banco
 
 class PaymentLogResource(Resource):
-    #attrs = reqparse.RequestParser()
-    
     
     def get(self):
         user_id = request.args.get('user_id')
@@ -39,6 +37,8 @@ class PaymentsLogResource(Resource):
     atributos.add_argument('pix_key', type=str, required=False)
     atributos.add_argument('children_quantity', type=int, required=False)
     atributos.add_argument('adults_quantity', type=int, required=False)
+    atributos.add_argument('user_email', type=str, required=False)
+    atributos.add_argument('hotel_name', type=str, required=False)
 
     def get(self):
         
@@ -58,6 +58,6 @@ class PaymentsLogResource(Resource):
         dados = PaymentsLogResource.atributos.parse_args()
         banco.rpush(f"paymentLog:{dados.user_id}", json.dumps([{ "cobranca": {"pix_key": dados.pix_key, "user_id" : dados.user_id, "total_price": dados.total_price, 
                                                                                "cob_id": dados.cob_id, "hotel_id": dados.hotel_id, "check_in": dados.check_in, "check_out": dados.check_out, "room_option_id": dados.room_option_id, "status": dados.status, 
-                                                                               "children_quantity": dados.children_quantity, "adults_quantity": dados.adults_quantity} }]))
+                                                                               "children_quantity": dados.children_quantity, "adults_quantity": dados.adults_quantity, "user_email": dados.user_email, "hotel_name": dados.hotel_name} }]))
         banco.save()
-        return "bomDeu", 201
+        return "Pagamento registrado!", 201
